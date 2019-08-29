@@ -1,85 +1,101 @@
 require("dotenv").config()
 require("moment")
+var Spotify = require("node-spotify-api")
 var axios =require("axios")
 var fs = require("fs")
 var keys = require("./keys.js")
-var Spotify = require("node-spotify-api")
-var spotify = new Spotify(keys.spotify)
+
+
 var userInput = process.argv[2];
-var userQuery = process.argv[3];
+var userQuery = process.argv.slice(3).join(" ");
 
 function runApp(userInput,userQuery){
     switch(userInput){
         case "concert-this":
-            concertThis()
+            concertThis(userQuery)
             break;
         case "spotify-this":
-            spotifyThis()
+            spotifyThis(userQuery)
             break;
         case "movie-this":
-            movieThis()
+            movieThis(userQuery)
             break;
         case "do-this":
-            doThis(userQuery)
+            doThis()
             break;
         default:
             console.log("I do not understand")
     }
 }
 
-runApp(userInput,userQuery)
+function concertThis(artist){
+    var bandSearch = "https://rest.bandsintown.com/artists/" + artist + "/events?app_id=54cb3e1bf47109588d446f2e35a05a2a"
 
-function concertThis(){
+    axios.get(bandSearch).then(
+        function(response){
+            console.log("Name of Venue: " + response.data[0].venue.name + "\r\n")
+            console.log("Venue Location: " + response.data[0].venue.city + "\r\n")
+            console.log("Date of Event: " + response.data[0].datetime + "\r\n")
+        
+        }
+    )
+   
 
 
 }
 
-function spotifyThis(){
+function spotifyThis(songName){
+    var spotify = new Spotify(keys.spotify)
+    spotify.search({ type: 'track', query: songName , limit: 5 }, function(err, data) {
     
-    spotify
-    .search({ type: 'track', query: userQuery, limit: 5 })
-    .then(function(response) {
-      console.log(response);
+        if(err){
+            return console.log("error: " + err)
+        }
+
+        for (let i = 0; i < 5; i++) {
+            console.log("Artist Name " + data.tracks.items[0].album.artists[0].name + "\r\n")
+            console.log("Song Name: " + data.tracks.items[0].name + "\r\n")
+            console.log("song Link: " + data.tracks.items[0].href + "\r\n")
+            console.log("Album: " + data.tracks.items[0].album.name + "\r\n")
+    
+            
+        }
+
+      
+    
+        
     })
-    .catch(function(err) {
-      console.log(err);
-    });
   
     }
 
-    function movieThis(){
-        axios.get("http://www.omdbapi.com/?t= " + userQuery + "&y=&plot=short&apikey=trilogy&limit=1").then(
+    function movieThis(movie){
+        var movieSearch = "http://www.omdbapi.com/?t=" + movie + "&y=&plot=short&apikey=trilogy"
+  axios.get(movieSearch).then(
   function(response) {
-    console.log(response)
+    console.log("Title: " + response.data.Title + "\r\n")
+    console.log("Year Released: " + response.data.Year + "\r\n")
+    console.log("IMDB Rating: " + response.data.imdbRating + "\r\n")
+    console.log("plot: " + response.data.Plot + "\r\n")
+    console.log("Actors: " + response.data.Actors + "\r\n")
   })
-  .catch(function(error) {
-    if (error.response) {
-      // The request was made and the server responded with a status code
-      // that falls out of the range of 2xx
-      console.log("---------------Data---------------");
-      console.log(error.response.data);
-      console.log("---------------Status---------------");
-      console.log(error.response.status);
-      console.log("---------------Status---------------");
-      console.log(error.response.headers);
-    } else if (error.request) {
-      // The request was made but no response was received
-      // `error.request` is an object that comes back with details pertaining to the error that occurred.
-      console.log(error.request);
-    } else {
-      // Something happened in setting up the request that triggered an Error
-      console.log("Error", error.message);
-    }
-    console.log(error.config);
-  });
 
 
     }
 
     function doThis(){
-        fs.readFile
+        fs.readFile("random.txt", "utf-8", function(err , data){
+            if(err){
+                return console.group(err)
+            } else {
+                console.log(data)
+
+                var randomData = data.split(",")
+                runApp(randomData[0], randomData[1])
+            }
+        })
     }
 
+    runApp(userInput,userQuery)
        
                 
             
